@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+def require_from_magic_mirror(source_file)
+  require "#{File.dirname(__FILE__)}/#{source_file}"
+end
+
+require_from_magic_mirror "magic-mirror"
+require_from_magic_mirror "force_loader"
+#load"#{Dir.getwd}/bin/rails"
+load "bin/rails"
