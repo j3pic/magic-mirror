@@ -5,6 +5,11 @@ $unresolved_errors = resolve_dependencies begin
                                             puts "Resolving dependencies..."
                                             errors
                                           end
+def ignore_errors
+  yield
+rescue Exception => e
+  nil
+end
 
 def connection_info(model)
   model.connection_config[:makara]["connections"][0].slice( "host", "port", "database")
