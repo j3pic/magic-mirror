@@ -250,3 +250,5 @@ def save_database_map(map,filename)
     f.write map.to_json
   end
 end
+
+mark_tables_as_read_write

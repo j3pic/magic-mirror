@@ -67,6 +67,19 @@ ensure
   Dir.chdir oldwd
 end
 
+def mark_tables_as_read_write
+  MagicMirror.apropos_data(/\#readonly\?/).each do |spec| klass,method = spec.split('#')
+    k = klass.constantize
+    next unless k.is_a?(Class)
+    sc = k.superclass
+    eval %{class #{klass} < #{sc}
+              def readonly?
+                 false
+              end
+           end }
+  end
+end
+
 def exception_location(exn)
   file,line_string=exn.backtrace[0].split(':')[0..1]
   [file,line_string.to_i]
