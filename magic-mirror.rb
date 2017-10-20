@@ -429,6 +429,9 @@ class MagicMirror
                                                   filename: filename, line: line })
     end
     nil
+  rescue ArgumentError
+    puts "MagicMirror WARNING: Class #{klass} patches one or more of the methods 'instance_method' or 'method'."
+    puts "MagicMirror WARNING: Unable to collect method-location information for #{klass}"
   end
   def self.get_methods(klass,type)
     case type
