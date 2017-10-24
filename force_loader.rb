@@ -21,7 +21,7 @@ end
 def force_load(directory)
   failures = []
   walk_directory(directory) do |file|
-    next unless file =~ /\.rb$/
+    next unless file =~ /\.rb$/ && !MagicMirror.seen_file?(file)
     puts "Loading #{file}"
     begin
       gem_original_require file

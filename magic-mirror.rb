@@ -396,6 +396,9 @@ class MagicMirror
                                                     length: end_line-start_line,
                                                     nesting: nesting }
   end
+  def self.seen_file?(filename)
+    !!@reverse_lookup_index[filename]
+  end
   def self.info_at(filename, line)
     @reverse_lookup_index[filename] &&
     @reverse_lookup_index[filename].each do |start_line,info|
