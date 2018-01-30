@@ -521,7 +521,11 @@ end
 TracePoint.new(:class,:end) do |tp|
   tp.self.module_eval do
     next if self.frozen?
-    next if /^#/ =~ self.to_s
+    next if /^#/ =~ begin
+                      self.to_s
+                    rescue Exception => e
+                      next
+                    end
     case tp.event
     when :class
       MagicMirror.with_mutex do
