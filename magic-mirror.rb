@@ -420,14 +420,25 @@ class MagicMirror
     entry[new_def[:class]] = new_def
     entry
   end
+
+  def self.safe_method_source(method_type, klass, method_name)
+    if method_type == :class
+      klass.method(method_name).source_location
+    else
+      klass.instance_method(method_name).source_location
+    end
+  rescue => e
+    # This is necessary because of all those fuckers who override
+    # the "method" method.
+    nil
+  end
+
   def self.update_methods_for_class(klass,methods,method_type)
     methods &&
     methods.each do |meth|
       next unless meth.class == Symbol
       @apropos[meth.to_s] ||= {}
-      filename,line = method_type == :class ?
-                        klass.method(meth).source_location :
-                        klass.instance_method(meth).source_location
+      filename,line = safe_method_source(method_type, klass, meth)
       update_apropos_entry(@apropos[meth.to_s], { class: klass, type: method_type, inherited: class_at(filename,line) != klass,
                                                   filename: filename, line: line })
     end
@@ -577,7 +588,7 @@ require 'ripper'
 #        behavior.
 
 
-class Thread
+class ZThread
   class << self
     alias :magic_mirror_real_new :new
     def new(*args, &block)
