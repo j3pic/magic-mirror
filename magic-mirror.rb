@@ -419,6 +419,8 @@ class MagicMirror
   def self.update_apropos_entry(entry, new_def)
     entry[new_def[:class]] = new_def
     entry
+  rescue TypeError => e
+    entry
   end
 
   def self.safe_method_source(method_type, klass, method_name)
@@ -456,21 +458,23 @@ class MagicMirror
     end
   end
   $total_constants = 0
+
   def self.update_apropos(klass)
     return unless klass
-    if @last_known_class_methods[klass] != klass.methods
+    key = klass.to_s
+    if @last_known_class_methods[key] != klass.methods
       update_methods_for_class(klass,get_methods(klass,:class),:class)
-      @last_known_class_methods[klass] = klass.methods
+      @last_known_class_methods[key] = klass.methods
     end
-    if @last_known_class_instance_methods[klass] != klass.instance_methods
+    if @last_known_class_instance_methods[key] != klass.instance_methods
       update_methods_for_class(klass,get_methods(klass,:instance),:instance)
-      @last_known_class_instance_methods[klass] = klass.instance_methods
+      @last_known_class_instance_methods[key] = klass.instance_methods
     end
-    if @last_known_class_constants[klass] != klass.constants
+    if @last_known_class_constants[key] != klass.constants
       klass.constants.each do |const|
         register_class const,klass
       end
-      @last_known_class_constants[klass] = klass.constants
+      @last_known_class_constants[key] = klass.constants
     end
   end
   def self.fqmn(klass,name,type)
