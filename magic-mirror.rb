@@ -252,6 +252,7 @@ end
 #
 
 class MagicMirror
+  @active_record_associations = {}
   @reverse_lookup_index = {}
   @apropos = {}
   @class_apropos = {}
@@ -262,6 +263,47 @@ class MagicMirror
   @defined_by_magic_mirror = {}
   @in_eval_at = false
   @mutex = Object::Mutex.new
+
+  module ActiveRecordAssociationInstruments
+    [:has_one, :has_many, :belongs_to, :has_and_belongs_to_many].each do |m|
+      define_method(m) do |*args|
+        name = args[0]
+        defined_at = caller[0].split(':').slice(0,2)
+        defined_at[1] = defined_at[1].to_i
+        MagicMirror.with_mutex do
+          MagicMirror.update_apropos_entry(name.to_s, { class: self,
+                                                        type: :instance,
+                                                        inherited: false,
+                                                        filename: defined_at[0],
+                                                        line: defined_at[1] })
+          MagicMirror.add_active_record_association(self, name, defined_at)
+        end
+        if block_given?
+          super(*args) do |*block_args|
+            yield *block_args
+          end
+        else
+          super(*args)
+        end
+      end
+    end
+    def association_locations(name)
+      MagicMirror.association_locations(self,name)
+    end
+  end
+
+  def self.add_active_record_association(klass, assoc_name, assoc_location)
+    @active_record_associations[[klass,assoc_name]] ||= []
+    @active_record_associations[[klass,assoc_name]] << assoc_location
+  end
+
+  def self.association_locations(klass,assoc_name)
+    @active_record_associations[[klass,assoc_name]]
+  end
+
+  def self.instrument_active_record_associations(klass)
+    klass.prepend(ActiveRecordAssociationInstruments)
+  end
 
   def self.mutexed
     MutexedMagicMirror
@@ -559,6 +601,12 @@ TracePoint.new(:class,:end) do |tp|
                                      end: [tp.path, tp.lineno],
                                      nesting: MagicMirror.inferred_nesting.reverse }
         MagicMirror.with_mutex do
+          begin
+            if self.name == 'ActiveRecord::Associations::ClassMethods'
+              MagicMirror.instrument_active_record_associations(self)
+            end
+          rescue => e
+          end
           MagicMirror.add_class_definition_range(self, MagicMirror.inferred_nesting.reverse, @magic_mirror_last_begin, [tp.path, tp.lineno])
           MagicMirror.update_apropos(self)
           MagicMirror.pop_nesting
